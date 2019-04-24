@@ -1,6 +1,13 @@
 #! /usr/bin/env python
 __author__ = 'Joris Quenee'
 
+
+# TODO:
+# Add exit
+# Add exit sound ?..
+# Clean the code
+# Add mouse
+
 import os
 import time
 from maze import *
