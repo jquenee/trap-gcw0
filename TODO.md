@@ -1,4 +1,3 @@
-- Exit
 - Exit sound ?..
 - Smooth player move
 - Player sound

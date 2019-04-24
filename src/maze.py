@@ -131,6 +131,26 @@ class Cell:
     def draw(self, screen):
         screen.blit(self.image, self.rect)
 
+class Exit(Cell):
+    def __init__(self, x, y):
+        self.x, self.y = x, y
+        self.image = pygame.Surface([self.w, self.h - self.wl * 2])
+        # bleu
+        self.image.fill((0, 0, 255))
+        # shape to draw
+        self.rect = self.image.get_rect()
+        self.rect.x = (x * self.w) + 2 * self.wl
+        self.rect.y = (y * self.h) + self.wl
+
+    def player_found(self, player, maze, screen):
+        if self.x + 1 == player.x and self.y == player.y:
+            # remove player before to exit game
+            maze.cell_at(self.x, self.y).fill()
+            maze.cell_at(self.x, self.y).draw(screen)
+            pygame.display.update()
+            # wait 2s before to restart the game
+            pygame.time.delay(2000)
+            maze.end_game = True
 
 class Player:
     def __init__(self, file, x, y):
@@ -142,6 +162,12 @@ class Player:
         self.rect.x = x * Cell.w + Cell.wl * 2
         self.rect.y = y * Cell.h + Cell.wl * 2
 
+    def __str__(self):
+        return str(self.__class__) + " ("+ str(self.x) + "," + str(self.y) +")"
+
+    def __repr__(self):
+        return self.__str__()
+
     def refresh(self):
         self.rect.x = self.x * Cell.w + Cell.wl * 2
         self.rect.y = self.y * Cell.h + Cell.wl * 2
@@ -149,7 +175,7 @@ class Player:
 
     def move(self, maze, direction, screen):
         # check if we have wall that block access
-        if not maze.cell_at(self.x, self.y).walls[direction]:
+        if not maze.cell_at(self.x, self.y).walls[direction] or self.x == maze.w - 1:
             # remove player image from current position
             maze.cell_at(self.x, self.y).fill()
             maze.cell_at(self.x, self.y).draw(screen)
@@ -162,9 +188,11 @@ class Player:
             if direction == 'W' and maze.is_allowed(self.x - 1, self.y):
                 self.x = self.x - 1
             # set player image to new position
-            # print(str(self.x) + ", " + str(self.y))
             self.refresh()
             self.draw(screen)
+
+            # check if we found the exit
+            maze.exit.player_found(maze.player, maze, screen)
             # check if wolf kill the Player
             maze.wolf.kill_player(maze.player, maze, screen)
 
@@ -275,7 +303,9 @@ class Maze:
         self.end_game = False
 
     def is_allowed(self, x, y):
-        return x >= 0 and x < self.w and y >= 0 and y < self.h
+        is_inside = (x >= 0 and x < self.w and y >= 0 and y < self.h)
+        is_intoexit = (self.w <= x and self.exit.y == y)
+        return is_inside or is_intoexit
 
     def cell_at(self, x, y):
         """Return the Cell object at (x,y)."""
@@ -334,6 +364,9 @@ class Maze:
             pygame.time.wait(5)
             nv += 1
 
+        # set exit
+        self.exit = Exit(self.w - 1, random.randint(0, self.h - 1))
+        self.exit.draw(screen)
         # set player
         self.player = Player("assets/player.png", 0, self.iy)
         self.player.draw(screen)
