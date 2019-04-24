@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Trap
+Type=Application
+Exec=src/main.py
+Icon=assets/Icon
+Comment=Trap TO7 adaptation
+Terminal=false
+Categories=games;
