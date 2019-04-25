@@ -57,13 +57,13 @@ def main():
                 done = 1
             if e.type == KEYUP and e.key == K_RETURN: # "start" key in GCW Zero
                 maze = draw_maze(screen)
-            if e.type == KEYUP and e.key == K_UP:
+            if e.type == KEYDOWN and e.key == K_UP:
                 maze.player.move(maze, 'N', screen)
-            if e.type == KEYUP and e.key == K_DOWN:
+            if e.type == KEYDOWN and e.key == K_DOWN:
                 maze.player.move(maze, 'S', screen)
-            if e.type == KEYUP and e.key == K_LEFT:
+            if e.type == KEYDOWN and e.key == K_LEFT:
                 maze.player.move(maze, 'W', screen)
-            if e.type == KEYUP and e.key == K_RIGHT:
+            if e.type == KEYDOWN and e.key == K_RIGHT:
                 maze.player.move(maze, 'E', screen)
 
             if e.type == PNG_EVENT:

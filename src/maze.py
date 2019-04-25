@@ -143,14 +143,11 @@ class Exit(Cell):
         self.rect.y = (y * self.h) + self.wl
 
     def player_found(self, player, maze, screen):
-        if self.x + 1 == player.x and self.y == player.y:
-            # remove player before to exit game
-            maze.cell_at(self.x, self.y).fill()
-            maze.cell_at(self.x, self.y).draw(screen)
-            pygame.display.update()
-            # wait 2s before to restart the game
-            pygame.time.delay(2000)
-            maze.end_game = True
+        # remove player before to exit game
+        maze.cell_at(self.x, self.y).fill()
+        maze.cell_at(self.x, self.y).draw(screen)
+        pygame.display.update()
+        maze.game_over()
 
 class Player:
     def __init__(self, file, x, y):
@@ -171,28 +168,30 @@ class Player:
     def refresh(self):
         self.rect.x = self.x * Cell.w + Cell.wl * 2
         self.rect.y = self.y * Cell.h + Cell.wl * 2
-        # print(str(self.rect.x) + ", " + str(self.rect.y))
 
     def move(self, maze, direction, screen):
+        # check if we found the exit
+        if direction == 'E' and self.x == maze.exit.x and self.y == maze.exit.y:
+            maze.exit.player_found(maze.player, maze, screen)
+            return
+
         # check if we have wall that block access
-        if not maze.cell_at(self.x, self.y).walls[direction] or self.x == maze.w - 1:
+        if not maze.cell_at(self.x, self.y).walls[direction]:
             # remove player image from current position
             maze.cell_at(self.x, self.y).fill()
             maze.cell_at(self.x, self.y).draw(screen)
-            if direction == 'N' and maze.is_allowed(self.x, self.y - 1):
+            if direction == 'N':
                 self.y = self.y - 1
-            if direction == 'S' and maze.is_allowed(self.x, self.y + 1):
+            if direction == 'S':
                 self.y = self.y + 1
-            if direction == 'E' and maze.is_allowed(self.x + 1, self.y):
+            if direction == 'E':
                 self.x = self.x + 1
-            if direction == 'W' and maze.is_allowed(self.x - 1, self.y):
+            if direction == 'W':
                 self.x = self.x - 1
             # set player image to new position
             self.refresh()
             self.draw(screen)
 
-            # check if we found the exit
-            maze.exit.player_found(maze.player, maze, screen)
             # check if wolf kill the Player
             maze.wolf.kill_player(maze.player, maze, screen)
 
@@ -201,7 +200,10 @@ class Player:
 
 def yell_wolf():
     sound = pygame.mixer.Sound('assets/wolf.wav')
-    sound.play()
+    channel = sound.play()
+    # wait end of sound playing
+    while channel.get_busy():
+        pygame.time.wait(100)  # ms
 
 class Wolf(Player):
 
@@ -220,9 +222,7 @@ class Wolf(Player):
             self.draw(screen)
             pygame.display.update()
             self.yell()
-            pygame.time.delay(3000)
-            maze.end_game = True
-
+            maze.game_over()
 
     def path_search(self, maze, start, end):
         visited = []
@@ -288,6 +288,10 @@ class Wolf(Player):
             # print(self.path_stack)
         return self.path_stack.pop()
 
+def game_over_sound():
+    sound = pygame.mixer.Sound('assets/game-over.wav')
+    sound.play()
+
 class Maze:
     """A Maze, represented as a grid of cells."""
 
@@ -301,6 +305,13 @@ class Maze:
         self.ix, self.iy = ix, iy
         self.grid = [[Cell(x, y) for y in range(self.h)] for x in range(self.w)]
         self.end_game = False
+
+    def game_over(self):
+        t = threading.Thread(name='game-over', target=game_over_sound)
+        t.start()
+        t.join()
+        pygame.time.delay(2000)
+        self.end_game = True
 
     def is_allowed(self, x, y):
         is_inside = (x >= 0 and x < self.w and y >= 0 and y < self.h)
