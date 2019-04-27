@@ -1,1 +1,1 @@
-scp trap.opk root@192.168.0.18:/media/data/apps/
+scp trap.opk root@192.168.1.139:/media/data/apps/

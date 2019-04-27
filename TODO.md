@@ -1,7 +1,5 @@
-- Exit sound ?..
-- Smooth player move
-- Player sound
 - Clean the code
 - Cheese
 - Mouse: speeder move, sound, teleportation
+- Player sound
 - README.md

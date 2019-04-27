@@ -45,27 +45,28 @@ def main():
     clock = pygame.time.Clock()
     maze = draw_maze(screen)
 
-    PNG_EVENT, t = pygame.USEREVENT+1, 300 # in millisecond
+    PNG_EVENT, t = pygame.USEREVENT+1, 400 # in millisecond
     pygame.time.set_timer(PNG_EVENT, t)
 
     done = 0
     while not done:
-        for e in pygame.event.get():
-            if e.type == QUIT: # select key in GCW Zero
-                done = 1
-            if e.type == KEYUP and e.key == K_ESCAPE: # "select" key in GCW Zero
-                done = 1
-            if e.type == KEYUP and e.key == K_RETURN: # "start" key in GCW Zero
-                maze = draw_maze(screen)
-            if e.type == KEYDOWN and e.key == K_UP:
-                maze.player.move(maze, 'N', screen)
-            if e.type == KEYDOWN and e.key == K_DOWN:
-                maze.player.move(maze, 'S', screen)
-            if e.type == KEYDOWN and e.key == K_LEFT:
-                maze.player.move(maze, 'W', screen)
-            if e.type == KEYDOWN and e.key == K_RIGHT:
-                maze.player.move(maze, 'E', screen)
+        pressed = pygame.key.get_pressed()
+        if pressed[QUIT]:
+            done = 1
+        if pressed[K_ESCAPE]:
+            done = 1
+        if pressed[K_RETURN]:
+            maze = draw_maze(screen)
+        if pressed[K_UP]:
+            maze.player.move(maze, 'N', screen)
+        if pressed[K_DOWN]:
+            maze.player.move(maze, 'S', screen)
+        if pressed[K_LEFT]:
+            maze.player.move(maze, 'W', screen)
+        if pressed[K_RIGHT]:
+            maze.player.move(maze, 'E', screen)
 
+        for e in pygame.event.get():
             if e.type == PNG_EVENT:
                 wd = maze.wolf.next_move(maze)
                 maze.wolf.move(maze, wd, screen)
@@ -74,7 +75,7 @@ def main():
             maze = draw_maze(screen)
 
         pygame.display.update()
-        clock.tick()
+        clock.tick(10)
 
 if __name__ == '__main__':
     main()
