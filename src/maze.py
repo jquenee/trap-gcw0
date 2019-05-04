@@ -18,7 +18,9 @@ __metaclass__ = type
 CELL_WIDTH = 20
 CELL_HIGH = 20
 WALL_THICKNESS = 3
-PLAYER_ZOOM = 10
+SPRITE_ZOOM = 10
+FRAME = 5
+COLLISION_BOX = 5
 
 def is_present(array, value):
     try:
@@ -135,8 +137,7 @@ class Exit(Cell):
     def __init__(self, x, y):
         self.x, self.y = x, y
         self.image = pygame.Surface([self.w, self.h - self.wl * 2])
-        # bleu
-        self.image.fill((0, 0, 255))
+        self.image.fill((0, 0, 255)) # bleu
         # shape to draw
         self.rect = self.image.get_rect()
         self.rect.x = (x * self.w) + 2 * self.wl
@@ -149,15 +150,58 @@ class Exit(Cell):
         pygame.display.update()
         maze.game_over()
 
-class Player:
+class Sprite:
     def __init__(self, file, x, y):
         self.file = file
         self.x, self.y = x, y
+        self.xold, self.yold = x, y
         self.image = pygame.image.load(self.file)
-        self.image = pygame.transform.scale(self.image, (PLAYER_ZOOM, PLAYER_ZOOM))
+        self.image = pygame.transform.scale(self.image, (SPRITE_ZOOM, SPRITE_ZOOM))
         self.rect = self.image.get_rect()
         self.rect.x = x * Cell.w + Cell.wl * 2
         self.rect.y = y * Cell.h + Cell.wl * 2
+        self.blank = pygame.Surface([self.image.get_rect().size[0], self.image.get_rect().size[1]])
+        self.blank.fill((0, 0, 255)) # bleu
+
+    def draw(self, screen):
+        screen.blit(self.image, self.rect)
+
+class Cheese(Sprite):
+    def __init__(self, file, x, y):
+        super(Cheese, self).__init__(file, x ,y) # Python 2.x adaptation
+        self.state = 3 # 3 whole cheese, 2 ate partially, 1 crumb, 0 no left 
+
+    def update_state(self):
+        if self.state == 3:
+            self.image = pygame.image.load("assets/cheese.png")
+        if self.state == 2:
+            self.image = pygame.image.load("assets/cheese-ate.png")
+        if self.state == 1:
+            self.image = pygame.image.load("assets/cheese-crumb.png")
+        if self.state <= 0:
+            self.image.fill((0, 0, 255)) # bleu
+        self.image = pygame.transform.scale(self.image, (SPRITE_ZOOM, SPRITE_ZOOM))
+
+    def eat_me(self, eater, screen):
+        # wolf don't eat cheese
+        if type(eater) is not Wolf:
+            if self.x == eater.x and self.y == eater.y:
+                if type(eater) is Player:
+                    self.state -= 1
+                self.update_state()
+            self.draw(screen)
+
+def player_chewing_mouse():
+    sound = pygame.mixer.Sound('assets/player-eat-mouse.wav')
+    channel = sound.play()
+    # wait end of sound playing
+    while channel.get_busy():
+        pygame.time.wait(100)  # ms
+
+class Player(Sprite):
+    def __init__(self, file, x, y):
+        super(Player, self).__init__(file, x ,y) # Python 2.x adaptation
+        self.frame = 0
 
     def __str__(self):
         return str(self.__class__) + " ("+ str(self.x) + "," + str(self.y) +")"
@@ -165,7 +209,40 @@ class Player:
     def __repr__(self):
         return self.__str__()
 
+    # to avoid PyEval_SaveThread: NULL tstate... in Python 2.x
+    def chewing_mouse(self):
+        t = threading.Thread(name='chewing_mouse', target=player_chewing_mouse)
+        t.start()
+        t.join()
+
+    def erase(self, screen):
+        screen.blit(self.blank, self.rect)
+
+    def draw(self, screen):
+        screen.blit(self.image, self.rect)
+
     def refresh(self):
+        # target reached, resync the position
+        if self.frame > FRAME - 1:
+            self.rect.x = self.x * Cell.w + Cell.wl * 2
+            self.rect.y = self.y * Cell.h + Cell.wl * 2
+            return
+        # skip previous animation, to jump on the second one
+        if self.frame == 0:
+            self.xmove, self.ymove = 0, 0
+            self.rect.x = self.xold * Cell.w + Cell.wl * 2
+            self.rect.y = self.yold * Cell.h + Cell.wl * 2
+            xgap = self.rect.x - (self.x * Cell.w + Cell.wl * 2)
+            ygap = self.rect.y - (self.y * Cell.h + Cell.wl * 2)
+            if xgap != 0:
+                self.xmove = xgap / FRAME
+            if ygap != 0:
+                self.ymove = ygap / FRAME
+        self.rect.x -= self.xmove
+        self.rect.y -= self.ymove
+        self.frame += 1
+
+    def no_frame(self):
         self.rect.x = self.x * Cell.w + Cell.wl * 2
         self.rect.y = self.y * Cell.h + Cell.wl * 2
 
@@ -177,9 +254,8 @@ class Player:
 
         # check if we have wall that block access
         if not maze.cell_at(self.x, self.y).walls[direction]:
-            # remove player image from current position
-            maze.cell_at(self.x, self.y).fill()
-            maze.cell_at(self.x, self.y).draw(screen)
+            self.xold = self.x
+            self.yold = self.y
             if direction == 'N':
                 self.y = self.y - 1
             if direction == 'S':
@@ -188,15 +264,20 @@ class Player:
                 self.x = self.x + 1
             if direction == 'W':
                 self.x = self.x - 1
-            # set player image to new position
-            self.refresh()
-            self.draw(screen)
+
+            self.frame = 0
+            # check if cheese has been ate
+            for cheese in maze.cheeses:
+                cheese.eat_me(self, screen)
 
             # check if wolf kill the Player
-            maze.wolf.kill_player(maze.player, maze, screen)
+            # maze.wolf.kill_player(maze.player, maze, screen)
 
-    def draw(self, screen):
-        screen.blit(self.image, self.rect)
+    def animation(self, screen):
+        self.erase(screen)
+        self.refresh()
+        # self.no_frame()
+        self.draw(screen)
 
 def yell_wolf():
     sound = pygame.mixer.Sound('assets/wolf.wav')
@@ -216,13 +297,6 @@ class Wolf(Player):
         t = threading.Thread(name='yell', target=yell_wolf)
         t.start()
         t.join()
-
-    def kill_player(self, player, maze, screen):
-        if self.x == player.x and self.y == player.y:
-            self.draw(screen)
-            pygame.display.update()
-            self.yell()
-            maze.game_over()
 
     def path_search(self, maze, start, end):
         visited = []
@@ -288,6 +362,23 @@ class Wolf(Player):
             # print(self.path_stack)
         return self.path_stack.pop()
 
+class Mouse(Wolf):
+    def __init__(self, file, x ,y):
+        super(Mouse, self).__init__(file, x ,y) # Python 2.x adaptation
+        self.alive = True
+
+''' Orginal game mouse doesn't go directly to cheese
+    def next_move(self, maze):
+        if self.path_stack == []:
+            source = maze.cell_at(self.x, self.y)
+            # choose random cheese to go
+            cheese = random.choice(maze.cheeses)
+            destination = maze.cell_at(cheese.x, cheese.y)
+            self.path_stack = self.path_search(maze, source, destination)
+            # print(self.path_stack)
+        return self.path_stack.pop()
+'''
+
 def game_over_sound():
     sound = pygame.mixer.Sound('assets/game-over.wav')
     sound.play()
@@ -312,6 +403,21 @@ class Maze:
         t.join()
         pygame.time.delay(2000)
         self.end_game = True
+
+    def wolf_kill_player(self, screen):
+        if self.wolf.rect.x - COLLISION_BOX <= self.player.rect.x <= self.wolf.rect.x + COLLISION_BOX and self.wolf.rect.y - COLLISION_BOX <= self.player.rect.y <= self.wolf.rect.y + COLLISION_BOX:
+            self.wolf.draw(screen)
+            pygame.display.update()
+            self.wolf.yell()
+            self.game_over()
+
+    def player_eat_mouse(self, screen):
+        for mouse in self.mice:
+            if mouse.alive and self.player.rect.x == mouse.rect.x and self.player.rect.y == mouse.rect.y:
+                self.player.draw(screen)
+                pygame.display.update()
+                self.player.chewing_mouse()
+                mouse.alive = False
 
     def is_allowed(self, x, y):
         is_inside = (x >= 0 and x < self.w and y >= 0 and y < self.h)
@@ -381,7 +487,19 @@ class Maze:
         # set player
         self.player = Player("assets/player.png", 0, self.iy)
         self.player.draw(screen)
+
         # set wolf
         starty = random.randint(0, self.h - 1)
         self.wolf = Wolf("assets/wolf.png", self.w - 1, starty)
         self.wolf.draw(screen)
+        # set mice
+        self.mice = []
+        for i in range(3):
+            self.mice += [Mouse("assets/mouse.png", random.randint(0, self.w - 1), random.randint(0, self.h - 1))]
+            self.mice[i].draw(screen)
+
+        # set cheeses
+        self.cheeses = []
+        for i in range(5):
+            self.cheeses += [Cheese("assets/cheese.png", random.randint(0, self.w - 1), random.randint(0, self.h - 1))]
+            self.cheeses[i].draw(screen)
