@@ -8,19 +8,6 @@ import pygame
 from pygame.locals import *
 from random import *
 
-# 320 x 240
-# https://wiki.dingoonity.org/index.php?title=Dingux:OpenDingux:Development#Building_OpenDingux_from_sources
-
-# DESKTOP SIZE SCREEN
-WIDTH = 20
-HIGH = 10
-
-# GCW ZERO OPTIMAL SIZE SCREEN
-WIDTH = 16
-HIGH = 12
-
-WINSIZE = (Cell.w * WIDTH, Cell.h * HIGH)
-
 def draw_maze(screen):
     # green is background
     screen.fill((0, 255, 0))
@@ -90,12 +77,15 @@ def main():
         for mouse in maze.mice:
         	if mouse.alive:
         		mouse.animation(screen)
+        for cheese in maze.cheeses:
+        	if cheese.state > 0:
+        		cheese.draw(screen)
 
         # Collision detections
         maze.wolf_kill_player(screen)
         maze.player_eat_mouse(screen)
-        #maze.player_eat_cheese(screen)
-        #maze.mouse_eat_cheese(screen)
+        maze.player_eat_cheese(screen)
+        maze.mouse_eat_cheese(screen)
 
      	# FPS / Frame Rate #
         pygame.display.update()
