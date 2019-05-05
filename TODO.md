@@ -1,4 +1,4 @@
+- Detect device and automatic change constants
 - Improve performance by pre-computing paths and other stuff to avoid lag in gcw0
 - Set cheese in corner
 - Clean the code
-

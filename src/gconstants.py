@@ -1,27 +1,23 @@
 # DESKTOP SIZE SCREEN
-# CELL_WIDTH = 40
-# CELL_HIGH = 40
-# WALL_THICKNESS = 5
-# PLAYER_ZOOM = 20
+# CELL_WIDTH = 80
+# CELL_HIGH = 80
+# WALL_THICKNESS = 10
+# SPRITE_ZOOM = 40
+# COLLISION_BOX = 20
 
 # GCW ZERO OPTIMAL SIZE SCREEN
 CELL_WIDTH = 20
 CELL_HIGH = 20
 WALL_THICKNESS = 3
+SPRITE_ZOOM = 10
 COLLISION_BOX = 5
 
-SPRITE_ZOOM = 10
 FRAME = 5
 
-# 320 x 240
-# https://wiki.dingoonity.org/index.php?title=Dingux:OpenDingux:Development#Building_OpenDingux_from_sources
-
-# DESKTOP SIZE SCREEN
-# WIDTH = 20
-# HIGH = 10
-
-# GCW ZERO OPTIMAL SIZE SCREEN
+# GCW ZERO / DESKTOP OPTIMAL SIZE GRID OF MAZE
 WIDTH = 16
 HIGH = 12
 
+# 320 x 240
+# https://wiki.dingoonity.org/index.php?title=Dingux:OpenDingux:Development#Building_OpenDingux_from_sources
 WINSIZE = (CELL_WIDTH * WIDTH, CELL_HIGH * HIGH)
