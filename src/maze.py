@@ -137,6 +137,21 @@ class Maze:
         pygame.time.delay(2000)
         self.end_game = True
 
+    def teleportation(self, screen):
+        # pickup active actors
+        actors = []
+        actors += [self.wolf]
+        for mouse in self.mice:
+            if mouse.alive:
+                actors += [mouse]
+        
+        # random pickup one actor
+        actor = random.choice(actors)
+
+        # teleport
+        actor.teleport(screen)
+
+
     def wolf_kill_player(self, screen):
         if self.wolf.rect.x - COLLISION_BOX <= self.player.rect.x <= self.wolf.rect.x + COLLISION_BOX and self.wolf.rect.y - COLLISION_BOX <= self.player.rect.y <= self.wolf.rect.y + COLLISION_BOX:
             self.wolf.draw(screen)

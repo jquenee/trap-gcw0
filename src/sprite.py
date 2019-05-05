@@ -167,7 +167,7 @@ class Player(Sprite):
     def animation(self, screen):
         self.erase(screen)
         self.refresh()
-        # self.no_frame()
+        #self.no_frame()
         self.draw(screen)
 
 def yell_wolf():
@@ -176,6 +176,10 @@ def yell_wolf():
     # wait end of sound playing
     while channel.get_busy():
         pygame.time.wait(100)  # ms
+
+def teleport_sound():
+    sound = pygame.mixer.Sound('assets/teleportation.wav')
+    channel = sound.play()
 
 class Wolf(Player):
 
@@ -188,6 +192,19 @@ class Wolf(Player):
         t = threading.Thread(name='yell', target=yell_wolf)
         t.start()
         t.join()
+
+    def vanish_sound(self):
+        t = threading.Thread(name='teleport_sound', target=teleport_sound)
+        t.start()
+        t.join()
+
+    def teleport(self, screen):
+        self.erase(screen)
+        self.x, self.y = random.randint(0, WIDTH - 1), random.randint(0, HIGH - 1) # pickup random position
+        self.refresh()
+        self.draw(screen)
+        self.path_stack = [] # re-init the path
+        self.vanish_sound()
 
     def path_search(self, maze, start, end):
         visited = []

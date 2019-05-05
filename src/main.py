@@ -42,10 +42,16 @@ def main():
     MOUSE_EVENT, t = pygame.USEREVENT+2, 300 # in millisecond
     pygame.time.set_timer(MOUSE_EVENT, t)
 
+    TELEPORTATION_EVENT, t = pygame.USEREVENT+3, 10000 # every 10s, we pickup one mouse or wolf in random and we teleport it
+    pygame.time.set_timer(TELEPORTATION_EVENT, t)
+
     done = 0
     while not done:
 
         for e in pygame.event.get():
+
+            if e.type == TELEPORTATION_EVENT:
+                maze.teleportation(screen)
 
             if e.type == WOLF_EVENT:
                 wd = maze.wolf.next_move(maze)
