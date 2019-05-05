@@ -51,7 +51,8 @@ class Sprite:
 class Cheese(Sprite):
     def __init__(self, file, x, y):
         super(Cheese, self).__init__(file, x ,y) # Python 2.x adaptation
-        self.state = 3 # 3 whole cheese, 2 ate partially, 1 crumb, 0 no left 
+        self.state = 3 # 3 whole cheese, 2 ate partially, 1 crumb, 0 no left
+        self.freeze = 0 
 
     def update_state(self):
         if self.state == 3:
@@ -68,14 +69,18 @@ class Cheese(Sprite):
         # wolf don't eat cheese
         if type(eater) is not Wolf:
             if self.x == eater.x and self.y == eater.y:
-                if type(eater) is Player:
-                    self.state = 0 # player eat cheese in one time
-                if type(eater) is Mouse:
-                    self.state -= 1 # mouse eat cheese piece by piece
-                self.update_state()
-                self.draw(screen)
-                pygame.display.update()
-                eater.chew()
+                if self.freeze <= 0:
+                    if type(eater) is Player:
+                        self.state = 0 # player eat cheese in one time
+                    if type(eater) is Mouse:
+                        self.state -= 1 # mouse eat cheese piece by piece
+                    self.update_state()
+                    self.draw(screen)
+                    pygame.display.update()
+                    eater.chew()
+                    self.freeze = 10 # disable hit box during 10 frames
+                else:
+                    self.freeze -= 1
 
 def player_chewing_mouse():
     sound = pygame.mixer.Sound('assets/player-eat-mouse.wav')

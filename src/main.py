@@ -20,7 +20,7 @@ def draw_maze(screen):
 
 def main():
     pygame.init()
-    pygame.mouse.set_visible(0)
+    pygame.mouse.set_visible(0) # disable mouse cursor
     # pygame.mixer.pre_init(44100, -16, 2, 2048)
     # pygame.mixer.init()
     scr_inf = pygame.display.Info()
@@ -32,6 +32,10 @@ def main():
     clock = pygame.time.Clock()
     maze = draw_maze(screen)
 
+    # by default the key repeat is disabled
+    # call set_repeat() to enable it
+    pygame.key.set_repeat(400, 400)
+
     WOLF_EVENT, t = pygame.USEREVENT+1, 400 # in millisecond
     pygame.time.set_timer(WOLF_EVENT, t)
 
@@ -41,32 +45,31 @@ def main():
     done = 0
     while not done:
 
-    	# Event Handling #
-    	pressed = pygame.key.get_pressed()
-        if pressed[QUIT]:
-        	done = 1
-        if pressed[K_ESCAPE]:
-        	done = 1
-        if pressed[K_RETURN]:
-        	maze = draw_maze(screen)
-        if pressed[K_UP]:
-        	maze.player.move(maze, 'N', screen)
-        elif pressed[K_DOWN]:
-        	maze.player.move(maze, 'S', screen)
-        elif pressed[K_LEFT]:
-        	maze.player.move(maze, 'W', screen)
-        elif pressed[K_RIGHT]:
-        	maze.player.move(maze, 'E', screen)
-
         for e in pygame.event.get():
-        	if e.type == WOLF_EVENT:
-        		wd = maze.wolf.next_move(maze)
-        		maze.wolf.move(maze, wd, screen)
-        	if e.type == MOUSE_EVENT:
-        		for mouse in maze.mice:
-        			if mouse.alive:
-        				md = mouse.next_move(maze)
-        				mouse.move(maze, md, screen)
+
+            if e.type == WOLF_EVENT:
+                wd = maze.wolf.next_move(maze)
+                maze.wolf.move(maze, wd, screen)
+            if e.type == MOUSE_EVENT:
+                for mouse in maze.mice:
+                    if mouse.alive:
+                        md = mouse.next_move(maze)
+                        mouse.move(maze, md, screen)
+
+            if e.type == pygame.KEYDOWN:
+                if e.key == QUIT or e.key == K_ESCAPE:
+                    done = 1
+                if e.key == K_RETURN:
+                    maze = draw_maze(screen) # re-init the game
+                    pygame.event.clear() # clear event queue
+                if e.key == pygame.K_LEFT:
+                    maze.player.move(maze, 'W', screen)
+                if e.key == pygame.K_RIGHT:
+                    maze.player.move(maze, 'E', screen)
+                if e.key == pygame.K_UP:
+                    maze.player.move(maze, 'N', screen)
+                if e.key == pygame.K_DOWN:
+                    maze.player.move(maze, 'S', screen)
 
         # Animation	Handling #
         if maze.end_game:
@@ -90,7 +93,6 @@ def main():
      	# FPS / Frame Rate #
         pygame.display.update()
         clock.tick(20)
-        # pygame.event.clear() # clear event queue
 
 if __name__ == '__main__':
     main()
