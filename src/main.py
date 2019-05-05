@@ -34,7 +34,7 @@ def main():
 
     # by default the key repeat is disabled
     # call set_repeat() to enable it
-    pygame.key.set_repeat(400, 400)
+    pygame.key.set_repeat(50, 400)
 
     WOLF_EVENT, t = pygame.USEREVENT+1, 400 # in millisecond
     pygame.time.set_timer(WOLF_EVENT, t)
