@@ -144,6 +144,8 @@ class Player(Sprite):
         self.rect.y = self.y * CELL_HIGH + WALL_THICKNESS * 2
 
     def move(self, maze, direction, screen):
+        if direction == None:
+            return
         # check if we found the exit
         if direction == 'E' and self.x == maze.exit.x and self.y == maze.exit.y:
             maze.exit.player_found(maze.player, maze, screen)
@@ -181,32 +183,7 @@ def teleport_sound():
     sound = pygame.mixer.Sound('assets/teleportation.wav')
     channel = sound.play()
 
-class Wolf(Player):
-
-    def __init__(self, file, x ,y):
-        super(Wolf, self).__init__(file, x ,y) # Python 2.x adaptation
-        self.path_stack = []
-
-    # to avoid PyEval_SaveThread: NULL tstate... in Python 2.x
-    def yell(self):
-        t = threading.Thread(name='yell', target=yell_wolf)
-        t.start()
-        t.join()
-
-    def vanish_sound(self):
-        t = threading.Thread(name='teleport_sound', target=teleport_sound)
-        t.start()
-        t.join()
-
-    def teleport(self, screen):
-        self.erase(screen)
-        self.x, self.y = random.randint(0, WIDTH - 1), random.randint(0, HIGH - 1) # pickup random position
-        self.refresh()
-        self.draw(screen)
-        self.path_stack = [] # re-init the path
-        self.vanish_sound()
-
-    def path_search(self, maze, start, end):
+def path_search(self, maze, start, end):
         visited = []
         stack = [start]
         expanded = [False]
@@ -254,10 +231,36 @@ class Wolf(Player):
             path += [node.parent_direction]
             node = node.parent
 
-        return path
+        self.path_stack = path
+
+class Wolf(Player):
+
+    def __init__(self, file, x ,y):
+        super(Wolf, self).__init__(file, x ,y) # Python 2.x adaptation
+        self.path_stack = []
+        self.path_compting_thread = threading.Thread(target=path_search)
+        
+    # to avoid PyEval_SaveThread: NULL tstate... in Python 2.x
+    def yell(self):
+        t = threading.Thread(name='yell', target=yell_wolf)
+        t.start()
+        t.join()
+
+    def vanish_sound(self):
+        t = threading.Thread(name='teleport_sound', target=teleport_sound)
+        t.start()
+        t.join()
+
+    def teleport(self, screen):
+        self.erase(screen)
+        self.x, self.y = random.randint(0, WIDTH - 1), random.randint(0, HIGH - 1) # pickup random position
+        self.refresh()
+        self.draw(screen)
+        self.path_stack = [] # re-init the path
+        self.vanish_sound()
 
     def next_move(self, maze):
-        if self.path_stack == []:
+        if self.path_stack == [] and not self.path_compting_thread.is_alive():
             source = maze.cell_at(self.x, self.y)
             # print("source: " + str(source))
             # choose random cell to go
@@ -266,8 +269,12 @@ class Wolf(Player):
                 destination = maze.random_cell()
             # print("destination: " + str(destination))
             # compute path tree possibility and retrieve path from tree possibility
-            self.path_stack = self.path_search(maze, source, destination)
+            # new thread is created to avoid lag issue
+            self.path_compting_thread = threading.Thread(target=path_search, args=[self, maze, source, destination])
+            self.path_compting_thread.start()
             # print(self.path_stack)
+        if self.path_stack == []:
+            return None
         return self.path_stack.pop()
 
 def mouse_nibble_cheese():
